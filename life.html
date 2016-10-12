@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="life.css"/>
+<script src="jquery.min.js"></script>
+<script>
+	var timerClass = function()
+	{
+		var _timePassed; // in milliseconds
+		var _timeAll; // in milliseconds. negative - infinite
+		var _tickCount;
+		var _timerObj;
+		var _paused = true; // true/false
+		var _active = false; // true/false
+		var _period = 100; // for smooth
+		var _tick = function(){}; // incapsulated function
+		var _start = function(){};
+		var _stop = function(){};
+		var _pause = function(){};
+		
+		var _tickParam; // for _tick
+		var _startParam; // for _start
+		var _stopParam; // for _stop
+		var _pauseParam; // for _pause
+		
+		this.setTimer = function(timerLength, period) // in milliseconds
+		{
+			if(!_paused)
+				return;
+			_timeAll = timerLength;
+			_timePassed = 0;
+			_tickCount = 0;
+			_period = period;
+		};
+		this.start = function()
+		{
+			if(!_paused || _active)
+				return;
+			_timePassed = 0;
+			_tickCount = 0;
+			_timerObj = setInterval(timerClass.tickFunction, _period, this);
+			_paused = false;
+			_active = true;
+			_start(this, _startParam);
+			_tick(this, _tickParam); // first tick at _timePassed == 0
+		};
+		this.stop = function()
+		{
+			if(!_active)
+				return;
+			clearInterval(_timerObj);
+			_paused = true;
+			_active = false;
+			_stop(this, _stopParam);
+		};
+		this.pause = function()
+		{
+			if(!_active)
+				return;
+			_paused = !_paused;
+			_pause(this, _pauseParam);
+		};
+		this.incTime = function()
+		{
+			_timePassed += _period;
+			_tickCount++;
+		};
+		this.tick = function()
+		{
+			this.incTime(); 
+			_tick(this, _tickParam);
+			if(_timeAll < 0)
+				return;
+			if(_timePassed >= _timeAll)
+			{
+				this.stop();
+			}
+		}
+		timerClass.tickFunction = function(thisObj)
+		{
+			if(thisObj.isPaused()) // too fucking ugly!!!!!!! Don't do this at native, kids!
+				return;
+			thisObj.tick(); // this call will be executed after first _period milliseconds elapsed
+		};
+		this.getTickFunction = function()
+		{
+			return _tick;
+		}
+		this.setTickFunction = function(tickFunc, param)
+		{
+			_tick = tickFunc;
+			_tickParam = param;
+		}
+		this.setStartFunction = function(startFunc, param)
+		{
+			_start = startFunc;
+			_startParam = param;
+		}
+		this.setStopFunction = function(stopFunc, param)
+		{
+			_stop = stopFunc;
+			_stopParam = param;
+		}
+		this.setPauseFunction = function(pauseFunc, param)
+		{
+			_pause = pauseFunc;
+			_pauseParam = param;
+		}
+		this.getAllTime = function()
+		{
+			return _timeAll;
+		}
+		this.getPassedTime = function()
+		{
+			return _timePassed;
+		};
+		this.isPaused = function()
+		{
+			return _paused;
+		};
+		this.getPeriod = function()
+		{
+			return _period;
+		}
+		this.getTickCount = function()
+		{
+			return _tickCount;
+		}
+	};
+	var initX = 10;
+	var initY = 10;
+	var gol1 = 
+	{
+		start: "start_1",
+		pause: "pause_1",
+		step: "step_1",
+		reset: "reset_1",
+		set: "set_1",
+		width: "w_1",
+		height: "h_1",
+		field: "uni_1",
+		generation: "gen_1",
+		life: "life_1"
+	};
+	var idToindex = /_([0-9]+)_([0-9]+)$/;
+	var golClass = function()
+	{
+		var _isInit = false;
+		var _golPack;
+		var _context = {field: [], generation: 0};
+		var _timer = new timerClass();
+		var _changed = [];
+		this.init = function(golPack)
+		{
+			_golPack = golPack;
+			_isInit = true;
+			var this_obj = this;
+			_timer.setTimer(-1, 50);
+			_timer.setTickFunction(function(timer_obj, this_arg) {this_arg.step(); this_arg.show();}, this_obj);
+			$("#" + _golPack.set).click(function()
+			{
+				var width = $("#" + _golPack.width).val();
+				var height = $("#" + _golPack.height).val();
+				if(isNaN(width) || (width < 3) || isNaN(height) || (height < 3))
+					return;
+				$("#" + _golPack.field).empty();
+				for(var i = 0; i < height; i++)
+					$("#" + _golPack.field).append(function()
+					{
+						var row = document.createElement("tr");
+						for(var j = 0; j < width; j++)
+						{
+							var cell = document.createElement("td");
+							cell.setAttribute("id", _golPack.field + "_" + i + "_" + j);
+							row.appendChild(cell);
+						}
+						return row;
+					});
+				_context.field.length = new Array(height);
+				for(i = 0; i < height; i++)
+				{
+					_context.field[i] = new Array(width);
+					for(j = 0; j < width; j++)
+					{
+						_context.field[i][j] = false;
+					}
+				}
+				_changed = arrayClone(_context.field);
+				$("#" + _golPack.field + ">tr>td").click(function()
+				{
+					$(this).toggleClass("life");
+					var ids = idToindex.exec($(this).attr("id"));
+					this_obj.setElement(ids[1] * 1, ids[2] * 1, $(this).hasClass("life"));
+					this_obj.show();
+				});
+				this_obj.reset();
+				this_obj.show();
+			});
+			$("#" + _golPack.step).click(function()
+			{
+				this_obj.step();
+				this_obj.show();
+			});
+			$("#" + _golPack.reset).click(function()
+			{
+				this_obj.reset();
+				this_obj.show();
+			});
+			$("#" + _golPack.start).click(function()
+			{
+				_timer.start();
+				if(_timer.isPaused())
+					_timer.pause();
+			});
+			$("#" + _golPack.pause).click(function()
+			{
+				_timer.pause();
+			});
+		};
+		this.reset = function()
+		{
+			if(!_isInit)
+				return;
+			_context.field.forEach(function(val1, id1)
+			{
+				val1.forEach(function(val2, id2)
+				{
+					_context.field[id1][id2] = false;
+				});
+			});
+			_context.generation = 0;
+			_changed = arrayClone(_context.field);
+		};
+		this.show = function()
+		{
+			if(!_isInit)
+				return;
+			var life = 0;
+			_context.field.forEach(function(val1, id1)
+			{
+				val1.forEach(function(val2, id2)
+				{	
+					if(val2)
+					{
+						$("#" + _golPack.field + "_" + id1 + "_" + id2).addClass("life");
+						life++;
+					}
+					else
+						$("#" + _golPack.field + "_" + id1 + "_" + id2).removeClass("life");
+				});
+			});
+			$("#" + _golPack.generation).text(_context.generation);
+			$("#" + _golPack.life).text(life);
+		}
+		this.getElement = function(id1, id2)
+		{
+			if(!_isInit)
+				return;
+			return $("#" + _golPack.field + "_" + id1 + "_" + id2).hasClass("life");
+		}
+		this.setElement = function(id1, id2, newVal)
+		{
+			if(!_isInit)
+				return;
+			_context.field[id1][id2] = newVal;
+			setChanging(id1, id2);
+		}
+		var setChanging = function(id1, id2)
+		{
+			var h = _changed.length;
+			var w = _changed[0].length;
+			for(var i = -1; i <= 1; i++)
+				for(var j = -1; j <= 1; j++)
+				{
+					_changed[(id1 + i + h) % h][(id2 + j + w) % w] = true;
+				}
+		}
+		var changeState = function(id1, id2) // is state changes?
+		{
+			var state = _context.field[id1][id2];
+			var h = _context.field.length;
+			var w = _context.field[0].length;
+			var sum = 0;
+			for(var i = -1; i <= 1; i++)
+				for(var j = -1; j <= 1; j++)
+					sum += _context.field[(id1 + i + h) % h][(id2 + j + w) % w] ? 1 : 0;
+			sum -= state ? 1 : 0;
+			if(state)
+			{
+				if((sum === 2) || (sum === 3))
+					return false;
+				return true;
+			}
+			else
+			{
+				if(sum === 3)
+					return true;
+				return false;
+			}
+		}
+		this.step = function()
+		{
+			if(!_isInit)
+				return;
+			var old_changed = arrayClone(_changed);
+			_changed.forEach(function(val1, id1)
+			{
+				val1.forEach(function(val2, id2)
+				{
+					_changed[id1][id2] = false;
+				});
+			});
+			var new_field = arrayClone(_context.field);
+			var hasChanges = false;
+			old_changed.forEach(function(val1, id1)
+			{
+				val1.forEach(function(val2, id2)
+				{
+					if(!val2) // not changed
+						return;
+					if(changeState(id1, id2))
+					{
+						setChanging(id1, id2);
+						new_field[id1][id2] = !(new_field[id1][id2]);
+						hasChanges = true;
+					}
+				});
+			});
+			_context.field = arrayClone(new_field);
+			_context.generation++;
+			return hasChanges;
+		}
+	}
+	function arrayClone(arr)
+	{
+		var i, copy;
+		if(Array.isArray(arr)) 
+		{
+			copy = arr.slice(0);
+			for(i = 0; i < copy.length; i++) 
+			{
+				copy[i] = arrayClone(copy[i]);
+			}
+			return copy;
+		} 
+		else 
+			if( typeof arr === 'object')
+			{
+				throw 'Cannot clone array containing an object!';
+			} 
+			else 
+			{
+				return arr;
+			}
+	}
+	var uni1 = new golClass();
+	
+	$(document).ready(function()
+	{
+		uni1.init(gol1);
+	});
+</script>
+<html>
+<body>
+	<div class="header">Conway's Game of Life (and death)</div>
+	<div class="game_module">
+		<div class="side_bar">
+			<div class="life_button" id="start_1">START</div>
+			<div class="life_button" id="pause_1">PAUSE</div>
+			<div class="life_button" id="step_1">STEP</div>
+			<div class="life_button" id="reset_1">RESET</div>
+			<input type="text" id="w_1" placeholder="width"/><br>
+			<span>X</span><br>
+			<input type="text" id="h_1" placeholder="height"/><br>
+			<div class="life_button" id="set_1">SET</div>
+			<div class="life_capt" id="life_1"></div>
+			<div class="life_capt" id="gen_1"></div>
+		</div>
+		<table class="universe">
+		<tbody id="uni_1">
+		</tbody>
+		</table>
+	</div>
+</body>
+</html>

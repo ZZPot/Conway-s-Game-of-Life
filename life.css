@@ -1,0 +1,78 @@
+body
+{
+	padding: 20px 10px;
+}
+.header
+{
+	color: rgb(0, 0, 0);
+	font-family: Times;
+	font-size: 40px;
+	text-align: center;
+}
+.life_button
+{
+	background-image: linear-gradient(to bottom, rgb(150, 150, 150), rgb(110, 110, 110) 100%);
+	padding: 4px;
+	border-radius: 2px;
+	min-height: 20px;
+	margin: 5px;
+	min-width: 20px;
+	cursor: pointer;
+	transition: all 0.1s ease-in-out 0s;
+	color: rgb(255, 255, 255);
+	font: 900 25px "arial";
+}
+.life_button:hover
+{
+	box-shadow: 0px 0px 2px 2px rgb(150, 150, 150);
+}
+.life_button:active
+{
+	background-image: linear-gradient(to top, rgb(110, 110, 110), rgb(20, 20, 20) 100%);
+}
+.side_bar
+{
+	border: 1px dotted;
+	padding: 5px;
+	text-align: center;
+	display: inline-block;
+	vertical-align: top;
+}
+input[type="text"]
+{
+	width: 90%;
+}
+.game_module
+{
+	display: inline-block;
+}
+.universe
+{
+	display: inline-block;
+	border-collapse: collapse;
+}
+.universe>tbody>tr>td
+{
+	border: 1px solid rgb(0, 0, 0);
+	width: 20px;
+	height: 20px;
+}
+.universe>tbody>tr>td:hover
+{
+	border-color: rgb(255, 0, 0);
+}
+.life
+{
+	background-color: rgb(0, 0, 0);
+}
+.life_capt
+{
+	background-color: rgb(110, 110, 110);
+	padding: 4px;
+	border-radius: 2px;
+	min-height: 20px;
+	margin: 5px;
+	min-width: 20px;
+	color: rgb(255, 255, 255);
+	font: 900 25px "arial";
+}
