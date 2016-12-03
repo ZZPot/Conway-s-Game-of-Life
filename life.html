@@ -2,6 +2,7 @@
 <link rel="stylesheet" href="life.css"/>
 <script src="jquery.min.js"></script>
 <script>
+
 	var timerClass = function()
 	{
 		var _timePassed; // in milliseconds
@@ -125,14 +126,13 @@
 			return _tickCount;
 		}
 	};
-	var initX = 10;
-	var initY = 10;
 	var gol1 = 
 	{
 		start: "start_1",
 		pause: "pause_1",
 		step: "step_1",
 		reset: "reset_1",
+		randomize: "rand_1",
 		set: "set_1",
 		width: "w_1",
 		height: "h_1",
@@ -141,6 +141,7 @@
 		life: "life_1"
 	};
 	var idToindex = /_([0-9]+)_([0-9]+)$/;
+	var randPerc = 20;
 	var golClass = function()
 	{
 		var _isInit = false;
@@ -204,12 +205,18 @@
 				this_obj.reset();
 				this_obj.show();
 			});
+			$("#" + _golPack.randomize).click(function()
+			{
+				this_obj.randomize(randPerc);
+				this_obj.show();
+			});
 			$("#" + _golPack.start).click(function()
 			{
 				_timer.start();
 				if(_timer.isPaused())
 					_timer.pause();
 			});
+			
 			$("#" + _golPack.pause).click(function()
 			{
 				_timer.pause();
@@ -229,6 +236,28 @@
 			_context.generation = 0;
 			_changed = arrayClone(_context.field);
 		};
+		this.randomize = function(randPercents)
+		{
+			if(!_isInit)
+				return;
+			this.reset();
+			var width = _context.field[0].length;
+			var height = _context.field.length;
+			var total_size = width * height;
+			if(randPercents > 100)
+				randPercents = 100;
+			var randCount = randPercents * total_size / 100.0;
+			var lifeless = new Array(total_size);
+			for(var i = 0; i < total_size; i++)
+				lifeless[i] = i;
+			for(var j, x, i = lifeless.length; i; j = parseInt(Math.random() * i), x = lifeless[--i], lifeless[i] = lifeless[j], lifeless[j] = x);
+	
+			for(var i = 0; i < randCount; i++)
+			{
+				_context.field[Math.floor(lifeless[i]/width)][lifeless[i]%width] = true;
+				_changed[Math.floor(lifeless[i]/width)][lifeless[i]%width] = true;
+			}
+		}
 		this.show = function()
 		{
 			if(!_isInit)
@@ -356,6 +385,9 @@
 	$(document).ready(function()
 	{
 		uni1.init(gol1);
+		$("#" + gol1.set).trigger("click");
+		uni1.randomize(randPerc);
+		uni1.show();
 	});
 </script>
 <html>
@@ -367,12 +399,13 @@
 			<div class="life_button" id="pause_1">PAUSE</div>
 			<div class="life_button" id="step_1">STEP</div>
 			<div class="life_button" id="reset_1">RESET</div>
-			<input type="text" id="w_1" placeholder="width"/><br>
+			<div class="life_button" id="rand_1">RANDOM</div>
+			<input type="text" id="w_1" placeholder="width" value="20"/><br>
 			<span>X</span><br>
-			<input type="text" id="h_1" placeholder="height"/><br>
+			<input type="text" id="h_1" placeholder="height" value="20"/><br>
 			<div class="life_button" id="set_1">SET</div>
-			<div class="life_capt" id="life_1"></div>
-			<div class="life_capt" id="gen_1"></div>
+			<div class="life_capt" id="life_1" title="Life cells"></div>
+			<div class="life_capt" id="gen_1" title="Current generation"></div>
 		</div>
 		<table class="universe">
 		<tbody id="uni_1">
